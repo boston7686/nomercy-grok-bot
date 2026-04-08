@@ -20,7 +20,7 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Channels Grok will scan (add or remove as you like)
+# Channels Grok will scan
 WATCH_CHANNELS = [
     "general", "memes", "clips-medias", "roast-no-mercy",
     "unhinged-nsfw", "irl-pets-nature", "foods-arts", "quotes",
@@ -28,7 +28,6 @@ WATCH_CHANNELS = [
 ]
 
 def split_message(text, limit=1900):
-    """Splits long text into chunks that Discord can handle"""
     if len(text) <= limit:
         return [text]
     chunks = []
@@ -36,7 +35,6 @@ def split_message(text, limit=1900):
         if len(text) <= limit:
             chunks.append(text)
             break
-        # Try to split at a newline for nicer chunks
         split_at = text[:limit].rfind('\n')
         if split_at == -1:
             split_at = limit
@@ -57,7 +55,7 @@ async def on_ready():
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("Pong! Grok is ready 🧠")
 
-@bot.tree.command(name="analyze", description="Grok analyzes the ENTIRE server")
+@bot.tree.command(name="analyze", description="Grok analyzes the ENTIRE server + wellness flags")
 async def analyze(interaction: discord.Interaction):
     await interaction.response.defer()
 
@@ -91,6 +89,11 @@ Your job: Analyze the recent activity across the whole server and give clear rec
 **⚠️ Discipline / Issues** (if any)
 - list any problems with reasoning and which channel
 
+**🧠 Wellness Flags** (if any)
+- Flag any messages that seem to show anger, frustration, low mood, sadness, or possible distress
+- Include channel + short quote for context
+- IMPORTANT: You are NOT a therapist. This is only an awareness flag for mods to check in if they want. Never diagnose anyone.
+
 **🚀 Engagement Ideas** (3 specific post topics or activities for the next few days)
 
 **🔧 Server Improvement Suggestions**
@@ -106,14 +109,13 @@ Be honest and helpful. This is a small friend group — keep suggestions realist
                 {"role": "user", "content": f"Here is recent activity from multiple channels:\n\n{recent_chat}\n\nGive me your full analysis."}
             ],
             temperature=0.7,
-            max_tokens=750   # lowered so responses stay shorter
+            max_tokens=750
         )
         grok_reply = response.choices[0].message.content
 
         header = "**Grok's Full Server Analysis**:\n\n"
         full_response = header + grok_reply
 
-        # Send in chunks if too long
         for chunk in split_message(full_response):
             await interaction.followup.send(chunk)
 
