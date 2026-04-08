@@ -68,14 +68,14 @@ async def analyze(interaction: discord.Interaction):
             continue
         try:
             messages = []
-            async for msg in channel.history(limit=25):
+            async for msg in channel.history(limit=50):
                 if not msg.author.bot:
                     messages.append(f"#{channel.name} | {msg.author.display_name}: {msg.content}")
             all_messages.extend(reversed(messages))
         except:
             continue
 
-    recent_chat = "\n".join(all_messages[-400:])
+    recent_chat = "\n".join(all_messages[-600:])
 
     system_prompt = """You are Grok, the official co-pilot and advisor for **No Mercy Hub** — a small, chill gaming Discord server with ~28 members.
 The server is for friends to hang out, team up in games, share clips, roast each other, and post memes.
