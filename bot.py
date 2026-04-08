@@ -20,20 +20,29 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ←←← ADD YOUR CHANNELS HERE (these are the ones Grok will scan)
+# Channels Grok will scan (add or remove as you like)
 WATCH_CHANNELS = [
-    "general",
-    "memes",
-    "clips-medias",
-    "roast-no-mercy",
-    "unhinged-nsfw",
-    "irl-pets-nature",
-    "foods-arts",
-    "quotes",
-    "movie-chat",
-    "hr-chat"
-    # Add or remove any channel names you want
+    "general", "memes", "clips-medias", "roast-no-mercy",
+    "unhinged-nsfw", "irl-pets-nature", "foods-arts", "quotes",
+    "movie-chat", "hr-chat"
 ]
+
+def split_message(text, limit=1900):
+    """Splits long text into chunks that Discord can handle"""
+    if len(text) <= limit:
+        return [text]
+    chunks = []
+    while text:
+        if len(text) <= limit:
+            chunks.append(text)
+            break
+        # Try to split at a newline for nicer chunks
+        split_at = text[:limit].rfind('\n')
+        if split_at == -1:
+            split_at = limit
+        chunks.append(text[:split_at])
+        text = text[split_at:].lstrip('\n')
+    return chunks
 
 @bot.event
 async def on_ready():
@@ -59,23 +68,22 @@ async def analyze(interaction: discord.Interaction):
         channel = discord.utils.get(guild.text_channels, name=channel_name)
         if not channel:
             continue
-
         try:
             messages = []
-            async for msg in channel.history(limit=25):  # 25 messages per channel
+            async for msg in channel.history(limit=25):
                 if not msg.author.bot:
                     messages.append(f"#{channel.name} | {msg.author.display_name}: {msg.content}")
-            all_messages.extend(reversed(messages))  # oldest first
+            all_messages.extend(reversed(messages))
         except:
-            continue  # skip channels we can't read
+            continue
 
-    recent_chat = "\n".join(all_messages[-400:])  # limit total size for cost
+    recent_chat = "\n".join(all_messages[-400:])
 
     system_prompt = """You are Grok, the official co-pilot and advisor for **No Mercy Hub** — a small, chill gaming Discord server with ~28 members.
 The server is for friends to hang out, team up in games, share clips, roast each other, and post memes.
 Tone: friendly, direct, fun, no corporate fluff. You can be sarcastic when appropriate but always fair.
 
-Your job: Analyze the recent activity across the **whole server** and give clear recommendations in this exact format:
+Your job: Analyze the recent activity across the whole server and give clear recommendations in this exact format:
 
 **📊 Quick Summary**
 (one short paragraph about overall vibe and activity)
@@ -98,11 +106,16 @@ Be honest and helpful. This is a small friend group — keep suggestions realist
                 {"role": "user", "content": f"Here is recent activity from multiple channels:\n\n{recent_chat}\n\nGive me your full analysis."}
             ],
             temperature=0.7,
-            max_tokens=900
+            max_tokens=750   # lowered so responses stay shorter
         )
         grok_reply = response.choices[0].message.content
 
-        await interaction.followup.send(f"**Grok's Full Server Analysis**:\n\n{grok_reply}")
+        header = "**Grok's Full Server Analysis**:\n\n"
+        full_response = header + grok_reply
+
+        # Send in chunks if too long
+        for chunk in split_message(full_response):
+            await interaction.followup.send(chunk)
 
     except Exception as e:
         await interaction.followup.send(f"❌ Something went wrong: {str(e)}")
