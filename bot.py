@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+from discord import app_commands
 
 load_dotenv()
 
@@ -121,5 +122,15 @@ Be honest and helpful. This is a small friend group — keep suggestions realist
 
     except Exception as e:
         await interaction.followup.send(f"❌ Something went wrong: {str(e)}")
+
+# NEW: !say command (posts as the bot with no evidence)
+@bot.command(name="say")
+@commands.has_permissions(administrator=True)
+async def say(ctx, *, message: str):
+    try:
+        await ctx.message.delete()           # Delete the user's command
+        await ctx.send(message)              # Bot posts cleanly
+    except discord.Forbidden:
+        await ctx.send("I don't have permission to delete messages in this channel.")
 
 bot.run(DISCORD_TOKEN)
