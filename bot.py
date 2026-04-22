@@ -56,6 +56,18 @@ async def on_ready():
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("Pong! Grok is ready 🧠")
 
+@bot.tree.command(name="say", description="Make the bot say something")
+@app_commands.describe(message="What you want the bot to say")
+async def say(interaction: discord.Interaction, message: str):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message(
+            "You don't have permission to use this command.", 
+            ephemeral=True
+        )
+        return
+    
+    await interaction.response.send_message(message)
+
 @bot.tree.command(name="analyze", description="Grok analyzes the ENTIRE server + wellness flags")
 async def analyze(interaction: discord.Interaction):
     await interaction.response.defer()
@@ -122,15 +134,5 @@ Be honest and helpful. This is a small friend group — keep suggestions realist
 
     except Exception as e:
         await interaction.followup.send(f"❌ Something went wrong: {str(e)}")
-
-# NEW: !say command (posts as the bot with no evidence)
-@bot.command(name="say")
-@commands.has_permissions(administrator=True)
-async def say(ctx, *, message: str):
-    try:
-        await ctx.message.delete()           # Delete the user's command
-        await ctx.send(message)              # Bot posts cleanly
-    except discord.Forbidden:
-        await ctx.send("I don't have permission to delete messages in this channel.")
 
 bot.run(DISCORD_TOKEN)
