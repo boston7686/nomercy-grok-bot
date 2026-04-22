@@ -21,6 +21,11 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# ====================== MOD CHECK ======================
+def is_mod(interaction: discord.Interaction) -> bool:
+    """Check if user has administrator or manage_messages permission"""
+    return interaction.user.guild_permissions.administrator or interaction.user.guild_permissions.manage_messages
+
 # Channels Grok will scan
 WATCH_CHANNELS = [
     "general", "memes", "clips-medias", "roast-no-mercy",
@@ -56,17 +61,16 @@ async def on_ready():
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("Pong! Grok is ready 🧠")
 
-@bot.tree.command(name="say", description="Make the bot say something")
-@app_commands.describe(message="What you want the bot to say")
+# ====================== NEW: SAY COMMAND (from your other server) ======================
+@bot.tree.command(name="say", description="Make the bot post a message as itself (Mods only)")
+@app_commands.describe(message="The message the bot should post")
+@app_commands.check(is_mod)
 async def say(interaction: discord.Interaction, message: str):
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message(
-            "You don't have permission to use this command.", 
-            ephemeral=True
-        )
-        return
-    
-    await interaction.response.send_message(message)
+    try:
+        await interaction.channel.send(message)
+        await interaction.response.send_message("✅ Message posted successfully!", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Failed to post message: {str(e)}", ephemeral=True)
 
 @bot.tree.command(name="analyze", description="Grok analyzes the ENTIRE server + wellness flags")
 async def analyze(interaction: discord.Interaction):
