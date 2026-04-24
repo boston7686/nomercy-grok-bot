@@ -189,7 +189,7 @@ async def on_ready():
     
     # Force sync commands to THIS server only (instant)
     try:
-        synced = await bot.tree.sync(guild=discord.Object(id=YOUR_SERVER_ID_HERE))
+        synced = await bot.tree.sync(guild=discord.Object(id=1027545614873014314))
         print(f"Synced {len(synced)} commands to this server")
     except Exception as e:
         print(e)
